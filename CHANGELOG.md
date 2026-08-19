@@ -37,5 +37,34 @@ First release. Menu bar app showing Claude subscription usage on macOS 13+.
   now filtered to payloads containing `claudeAiOauth` and ranked by validity, exact service name and
   expiry.
 
+- **429 backoff never escalated.** `refreshNow()` reset the ladder unconditionally, and both the
+  panel-open refresh and wake-from-sleep route through it. A user checking the panel every minute
+  held the app at the 5-minute rung indefinitely. The ladder now resets on HTTP 200 only (runbook
+  §7), and the panel-open refresh defers to an active backoff instead of the 60 s floor.
+- **Sleep reported a fabricated network error.** Cancelling the in-flight request on
+  `willSleepNotification` surfaced as `Netzwerkfehler: Vorgang abgebrochen`. Fetches are now
+  generation-tagged, so an abandoned request cannot publish a result.
+- **Acceptance criterion 3 was unmet in three layouts.** The reset point must appear as a wall-clock
+  time *and* as remaining runtime. The Doppelring panel (the default) and the Countdown session block
+  showed only the clock time; `ExtraWindowRow` showed only the countdown. All now show both.
+- **Menu bar label jumped width.** The no-data placeholder used EN DASH (7.002 pt) instead of a
+  digit-width glyph (7.559 pt), so the label shifted when the first values arrived; and the
+  Zahlenpaar style grew from five cells to six at 100 %, because the padding helper cannot truncate.
+  Both now use FIGURE DASH / FIGURE SPACE with a three-cell budget per value.
+- **Token source 2 rejected the token it exists for.** The user's own keychain entry
+  (`de.sagorski.claudemeter.token`, for a `claude setup-token` token) required a `claudeAiOauth`
+  wrapper, so a bare token string stored with `security add-generic-password -w` was skipped
+  silently — while the equivalent environment variable accepted it. Bare tokens are now accepted,
+  with a shape check so a random blob is never sent to the API as a credential.
+- **Time zone was frozen at launch.** `Calendar.current` is a snapshot; a long-running menu bar app
+  that travels across zones kept rendering reset times in the old zone. Switched to
+  `Calendar.autoupdatingCurrent`.
+- **Countdown glyph was unreadable in colour mode on light menu bars.** White text sat on a
+  semi-transparent mid-tone pill (~1.7:1 contrast). The pill now supplies its own dark ground.
+- **Zahlenpaar panel rows broke on long labels.** The 74 pt label column had no line limit, so
+  `Woche · Sonnet` wrapped and knocked the row out of alignment. Now 84 pt with tail truncation.
+- **Settings preview disagreed with the real label.** It truncated instead of rounding, showing
+  56 % where the menu bar showed 57 %.
+
 ### Notes
 - The data source is undocumented and unofficial. See [`docs/DATA-SOURCE.md`](docs/DATA-SOURCE.md).

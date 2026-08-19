@@ -119,6 +119,9 @@ struct DoppelringPanel: View {
                                     Text("Reset \(Formatting.resetLabel(resetsAt, now: data.now))")
                                         .font(.system(size: 10))
                                         .foregroundColor(Theme.tertiaryText)
+                                    Text(Formatting.remainingLabel(resetsAt, now: data.now))
+                                        .font(.system(size: 10))
+                                        .foregroundColor(Theme.tertiaryText)
                                 }
                             }
                         }
@@ -167,13 +170,15 @@ struct CountdownPanel: View {
                     .frame(height: 22)
                     .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
 
-                    HStack {
-                        // The 5-hour window is rolling: its start is simply the
-                        // reset time minus five hours.
+                    // The 5-hour window is rolling: its start is simply the
+                    // reset time minus five hours.
+                    VStack(alignment: .leading, spacing: 2) {
                         if let resetsAt = session.resetsAt {
-                            Text("Start \(Formatting.resetLabel(resetsAt.addingTimeInterval(-5 * 3600), now: data.now))")
-                            Spacer(minLength: 8)
-                            Text("Reset \(Formatting.resetLabel(resetsAt, now: data.now))")
+                            HStack {
+                                Text("Start \(Formatting.resetLabel(resetsAt.addingTimeInterval(-5 * 3600), now: data.now))")
+                                Spacer(minLength: 8)
+                                Text("Reset \(Formatting.resetLabel(resetsAt, now: data.now)) · \(Formatting.remainingLabel(resetsAt, now: data.now))")
+                            }
                         } else {
                             Text("Kein Reset-Zeitpunkt gemeldet")
                         }
@@ -286,7 +291,12 @@ struct ZahlenpaarPanel: View {
                         Text(window.label)
                             .font(.system(size: 11))
                             .foregroundColor(Theme.secondaryText)
-                            .frame(width: 74, alignment: .leading)
+                            // Fixed column keeps the bars aligned across rows;
+                            // without a line limit SwiftUI wraps rather than
+                            // truncates, and "Woche · Sonnet" would break the row.
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .frame(width: 84, alignment: .leading)
                         MeterBar(fraction: window.percent / 100,
                                  color: Theme.accent(for: window),
                                  height: 6)
@@ -301,7 +311,7 @@ struct ZahlenpaarPanel: View {
                         }
                         .font(.system(size: 10))
                         .foregroundColor(Theme.tertiaryText)
-                        .padding(.leading, 82)
+                        .padding(.leading, 92)
                     }
                 }
             }

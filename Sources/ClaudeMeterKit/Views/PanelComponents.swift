@@ -91,8 +91,10 @@ struct ExtraWindowRow: View {
             MeterBar(fraction: window.percent / 100,
                      color: Theme.accent(for: window),
                      height: 4)
+            // Acceptance criterion 3: every window shows its reset as a
+            // wall-clock time *and* as remaining runtime — not one or the other.
             if let resetsAt = window.resetsAt {
-                Text(Formatting.remainingLabel(resetsAt, now: now))
+                Text("Reset \(Formatting.resetLabel(resetsAt, now: now)) · \(Formatting.remainingLabel(resetsAt, now: now))")
                     .font(.system(size: 10))
                     .foregroundColor(Theme.tertiaryText)
             }

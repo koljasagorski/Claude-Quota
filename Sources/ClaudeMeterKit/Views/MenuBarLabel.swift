@@ -83,16 +83,25 @@ public struct MenuBarLabel: View {
         }
     }
 
+    /// The placeholder uses FIGURE DASH, which is exactly one digit wide, so
+    /// the label does not shift when the first values arrive.
     private func percentText(_ value: Int?) -> some View {
-        Text(value.map { "\(Formatting.fixedWidthPercent($0)) %" } ?? "–– %")
+        let digits = value.map { Formatting.fixedWidthPercent($0) } ?? Formatting.placeholderPercent()
+        return Text("\(digits) %")
             .font(.system(size: 12).monospacedDigit())
     }
 
-    /// Runbook format: `21·73`. Padded so it is always five glyphs wide.
+    /// Runbook format: `21·73`, always seven digit-cells wide.
+    ///
+    /// Three cells per value, not two: `fixedWidthPercent` cannot truncate, so
+    /// a two-cell budget silently grows to three at 100 % and shifts every
+    /// status item to the left of us — exactly what this type must never do.
     private var zahlenpaarText: String {
-        guard let snapshot else { return "––·––" }
-        let session = Formatting.fixedWidthPercent(snapshot.session?.roundedPercent ?? 0, digits: 2)
-        let weekly = Formatting.fixedWidthPercent(snapshot.weekly?.roundedPercent ?? 0, digits: 2)
+        guard let snapshot else {
+            return "\(Formatting.placeholderPercent())·\(Formatting.placeholderPercent())"
+        }
+        let session = Formatting.fixedWidthPercent(snapshot.session?.roundedPercent ?? 0)
+        let weekly = Formatting.fixedWidthPercent(snapshot.weekly?.roundedPercent ?? 0)
         return "\(session)·\(weekly)"
     }
 }

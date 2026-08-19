@@ -11,7 +11,7 @@
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-MenuBarExtra-0071e3)](#how-it-works)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-success)](#why-no-dependencies)
 [![Binary size](https://img.shields.io/badge/binary-~1%20MB-success)](#requirements)
-[![Tests](https://img.shields.io/badge/tests-49%20passing-success)](#tests)
+[![Tests](https://img.shields.io/badge/tests-65%20passing-success)](#tests)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 🇩🇪 **[Deutsche Version dieser Seite →](README.de.md)**
@@ -284,7 +284,7 @@ The doctor never prints your token.
 
 ```bash
 swift build -c release      # warning-free
-swift test                  # 49 tests
+swift test                  # 65 tests
 ./scripts/bundle.sh         # → build/ClaudeMeter.app, code-signed
 swift run claudemeter-doctor  # verify the live data path
 swift run AssetGen          # regenerate README screenshots + AppIcon.icns
@@ -292,7 +292,7 @@ swift run AssetGen          # regenerate README screenshots + AppIcon.icns
 
 ### Tests
 
-49 tests, no network required. They cover the things that actually broke during development:
+65 tests, no network required. They cover the things that actually broke during development:
 
 - Both response schemas, and the hybrid the API really returns
 - Codename placeholders (`nimbus_quill`, `tangelo`, …) never becoming fake 0 % rows
@@ -408,7 +408,7 @@ Claude-Quota/
 │  │  └─ Views/                      # glyphs, six panel layouts, settings
 │  ├─ Doctor/                        # claudemeter-doctor troubleshooting CLI
 │  └─ AssetGen/                      # renders README screenshots + app icon
-├─ Tests/ClaudeMeterKitTests/        # 49 tests incl. real API fixtures
+├─ Tests/ClaudeMeterKitTests/        # 65 tests incl. real API fixtures
 ├─ Resources/Info.plist              # LSUIElement = true
 ├─ scripts/bundle.sh                 # binary → signed .app
 ├─ docs/DATA-SOURCE.md               # verified endpoint findings

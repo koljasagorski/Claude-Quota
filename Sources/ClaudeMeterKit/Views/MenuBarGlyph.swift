@@ -130,12 +130,25 @@ struct CountdownGlyph: View {
     let palette: GlyphPalette
     static let size = CGSize(width: 38, height: 15)
 
+    /// This is the only glyph that puts text *on top* of the accent colours.
+    /// In template mode alpha does the work and macOS tints it. In colour mode
+    /// the pill must supply its own dark ground: the shared mid-tone track is
+    /// only ~1.7:1 against white text over a light menu bar, so the countdown —
+    /// the sole information this style carries — would be unreadable.
+    private var pillTrack: Color {
+        palette.isTemplate ? palette.track : Color(white: 0.14).opacity(0.88)
+    }
+
+    private var pillFill: Color {
+        palette.session.opacity(palette.isTemplate ? 0.55 : 0.85)
+    }
+
     var body: some View {
         ZStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 4, style: .continuous).fill(palette.track)
+            RoundedRectangle(cornerRadius: 4, style: .continuous).fill(pillTrack)
             GeometryReader { geometry in
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(palette.session.opacity(palette.isTemplate ? 0.55 : 0.5))
+                    .fill(pillFill)
                     .frame(width: geometry.size.width * values.sessionFraction)
             }
             Text(values.countdown)

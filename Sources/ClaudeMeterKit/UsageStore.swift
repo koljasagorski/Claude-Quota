@@ -24,10 +24,18 @@ public final class UsageStore: ObservableObject {
     private var pollTimer: Timer?
     private var clockTimer: Timer?
     private var inFlight: Task<Void, Never>?
-    private var backoffIndex: Int = 0
+    fileprivate var backoffIndexStorage: Int = 0
     private var isAsleep = false
     private var lastAttempt: Date?
+    /// When the next scheduled poll is due. Used to honour an active backoff
+    /// instead of the 60 s floor when the panel is opened.
+    private var nextPollAt: Date?
+    /// Identifies the fetch currently allowed to publish a result. Bumped when
+    /// a fetch is abandoned (sleep), so its cancellation cannot land as a
+    /// user-visible "network error".
+    fileprivate var fetchGenerationStorage: UInt64 = 0
     private var observers: [NSObjectProtocol] = []
+    fileprivate var lastScheduledDelayStorage: TimeInterval?
 
     public init(client: UsageClient = UsageClient()) {
         self.client = client
@@ -59,15 +67,22 @@ public final class UsageStore: ObservableObject {
     // MARK: - Refresh triggers
 
     /// Called when the panel opens. Click-spam must not provoke a 429, so this
-    /// is a no-op if the last attempt was under a minute ago.
+    /// is a no-op if the last attempt was under a minute ago — and while the
+    /// backoff ladder is active it defers to the ladder instead, otherwise
+    /// checking the panel would pin the app to its fastest cadence at exactly
+    /// the moment the server is asking it to slow down.
     public func refreshIfStale() {
         if let lastAttempt, Date().timeIntervalSince(lastAttempt) < Self.manualRefreshFloor { return }
-        refreshNow()
+        if case .rateLimited = state.error, let nextPollAt, Date() < nextPollAt { return }
+        performFetch()
     }
 
-    /// "Jetzt aktualisieren" — always fetches and resets the backoff ladder.
+    /// "Jetzt aktualisieren".
+    ///
+    /// Deliberately does *not* reset the backoff ladder: per runbook §7 the
+    /// ladder resets on HTTP 200 only. Resetting it here would let a user who
+    /// keeps checking the panel hold the app at the 5-minute rung forever.
     public func refreshNow() {
-        backoffIndex = 0
         performFetch()
     }
 
@@ -79,25 +94,31 @@ public final class UsageStore: ObservableObject {
         guard !isAsleep else { return }
 
         lastAttempt = Date()
+        fetchGenerationStorage &+= 1
+        let generation = fetchGenerationStorage
+
         inFlight = Task { [weak self] in
             guard let self else { return }
             do {
                 let snapshot = try await self.client.fetch()
-                self.finish(with: .success(snapshot))
+                self.finishEntryPoint(generation: generation, with: .success(snapshot))
             } catch let error as FetchError {
-                self.finish(with: .failure(error))
+                self.finishEntryPoint(generation: generation, with: .failure(error))
             } catch {
-                self.finish(with: .failure(.transient(error.localizedDescription)))
+                self.finishEntryPoint(generation: generation, with: .failure(.transient(error.localizedDescription)))
             }
         }
     }
 
-    private func finish(with result: Result<UsageSnapshot, FetchError>) {
+    fileprivate func finishEntryPoint(generation: UInt64, with result: Result<UsageSnapshot, FetchError>) {
+        // A fetch abandoned on sleep must not surface its own cancellation as a
+        // network error the user never experienced.
+        guard generation == fetchGenerationStorage else { return }
         inFlight = nil
 
         switch result {
         case .success(let snapshot):
-            backoffIndex = 0
+            backoffIndexStorage = 0
             state = .ready(snapshot)
             schedulePoll(after: Self.baseInterval)
 
@@ -111,8 +132,8 @@ public final class UsageStore: ObservableObject {
             }
 
             if case .rateLimited = error {
-                let delay = Self.backoffLadder[min(backoffIndex, Self.backoffLadder.count - 1)]
-                backoffIndex = min(backoffIndex + 1, Self.backoffLadder.count - 1)
+                let delay = Self.backoffLadder[min(backoffIndexStorage, Self.backoffLadder.count - 1)]
+                backoffIndexStorage = min(backoffIndexStorage + 1, Self.backoffLadder.count - 1)
                 schedulePoll(after: delay)
             } else if error.isTerminal {
                 // No point hammering: recheck at the normal cadence only.
@@ -128,11 +149,15 @@ public final class UsageStore: ObservableObject {
     private func schedulePoll(after delay: TimeInterval) {
         pollTimer?.invalidate()
         let interval = max(0, delay)
+        lastScheduledDelayStorage = interval
 
         if interval == 0 {
+            nextPollAt = Date()
             performFetch()
             return
         }
+
+        nextPollAt = Date().addingTimeInterval(interval)
 
         let timer = Timer(timeInterval: interval, repeats: false) { [weak self] _ in
             Task { @MainActor in self?.performFetch() }
@@ -176,6 +201,10 @@ public final class UsageStore: ObservableObject {
     func handleSleep() {
         isAsleep = true
         pollTimer?.invalidate(); pollTimer = nil
+        nextPollAt = nil
+        // Bump first: the cancellation below makes the in-flight request throw,
+        // and the stale generation stops that from becoming a visible error.
+        fetchGenerationStorage &+= 1
         inFlight?.cancel(); inFlight = nil
     }
 
@@ -186,3 +215,23 @@ public final class UsageStore: ObservableObject {
         refreshNow()
     }
 }
+
+#if DEBUG
+extension UsageStore {
+
+    /// Test hooks. These drive the state machine directly so the polling and
+    /// backoff behaviour can be asserted without a network round trip.
+    var backoffIndexForTesting: Int { backoffIndexStorage }
+    var lastScheduledDelayForTesting: TimeInterval? { lastScheduledDelayStorage }
+    var fetchGenerationForTesting: UInt64 { fetchGenerationStorage }
+
+    func simulateResultForTesting(_ result: Result<UsageSnapshot, FetchError>) {
+        fetchGenerationStorage &+= 1
+        finishForTesting(generation: fetchGenerationStorage, with: result)
+    }
+
+    func finishForTesting(generation: UInt64, with result: Result<UsageSnapshot, FetchError>) {
+        finishEntryPoint(generation: generation, with: result)
+    }
+}
+#endif

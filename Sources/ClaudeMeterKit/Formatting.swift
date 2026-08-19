@@ -6,8 +6,11 @@ import Foundation
 /// time zone and calendar, which is the whole point of the type.
 public enum Formatting {
 
+    /// `autoupdatingCurrent` rather than `current`: a menu bar app runs for
+    /// weeks and must follow the system time zone across travel and DST, not
+    /// freeze whatever was set at launch.
     public static var calendar: Calendar = {
-        var calendar = Calendar.current
+        var calendar = Calendar.autoupdatingCurrent
         calendar.locale = Locale(identifier: "de_DE")
         return calendar
     }()
@@ -99,6 +102,19 @@ public enum Formatting {
     public static func fixedWidthPercent(_ value: Int, digits: Int = 3) -> String {
         let text = String(value)
         guard text.count < digits else { return text }
-        return String(repeating: "\u{2007}", count: digits - text.count) + text
+        return String(repeating: figureSpace, count: digits - text.count) + text
+    }
+
+    /// U+2007. Exactly one digit wide by definition.
+    public static let figureSpace = "\u{2007}"
+    /// U+2012 FIGURE DASH — also exactly one digit wide, unlike EN DASH
+    /// (measured: 7.559 pt vs 7.002 pt at 12 pt). Using EN DASH for the
+    /// "no data yet" placeholder made the label jump the moment data arrived.
+    public static let figureDash = "\u{2012}"
+
+    /// Placeholder of exactly `digits` digit-cells, for the pre-first-fetch and
+    /// error states.
+    public static func placeholderPercent(digits: Int = 3) -> String {
+        String(repeating: figureDash, count: digits)
     }
 }

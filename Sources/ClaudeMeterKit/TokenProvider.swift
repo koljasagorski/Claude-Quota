@@ -36,9 +36,7 @@ public struct TokenProvider {
     /// turns into permanent 401s after that.
     public func resolve() throws -> Credential {
         if let credential = fromEnvironment() { return try validated(credential) }
-        if let credential = fromKeychain(service: Self.ownKeychainService, exactMatch: true) {
-            return try validated(credential)
-        }
+        if let credential = fromOwnKeychain() { return try validated(credential) }
         if let credential = fromKeychain(service: Self.keychainService, exactMatch: false) {
             return try validated(credential)
         }
@@ -63,6 +61,40 @@ public struct TokenProvider {
             rateLimitTier: nil,
             sourceDescription: "Umgebungsvariable"
         )
+    }
+
+    /// The user's own entry, for a token obtained with `claude setup-token`.
+    ///
+    /// Unlike Claude Code's entry this may hold a **bare token string** — that
+    /// is what `security add-generic-password -s de.sagorski.claudemeter.token
+    /// -w sk-ant-oat01-…` stores, and what the environment-variable source
+    /// already accepts. Requiring a `claudeAiOauth` wrapper here would make the
+    /// two documented "bring your own token" paths behave differently and fail
+    /// silently.
+    func fromOwnKeychain() -> Credential? {
+        guard let data = readItem(service: Self.ownKeychainService) else { return nil }
+        let source = "Schlüsselbund (\(Self.ownKeychainService))"
+
+        if let credential = Self.decode(data, source: source) { return credential }
+        return Self.bareToken(data, source: source)
+    }
+
+    /// Accepts a raw token string. Deliberately strict about shape so a random
+    /// blob is not sent to the API as if it were a credential.
+    static func bareToken(_ data: Data, source: String) -> Credential? {
+        guard let raw = String(data: data, encoding: .utf8) else { return nil }
+        let token = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard token.count >= 20,
+              !token.contains(where: { $0.isWhitespace }),
+              token.hasPrefix("sk-ant-") else { return nil }
+
+        // No expiry is knowable for a bare token; let the server answer instead
+        // of refusing a credential that may well be fine.
+        return Credential(accessToken: token,
+                          expiresAt: nil,
+                          subscriptionType: nil,
+                          rateLimitTier: nil,
+                          sourceDescription: source)
     }
 
     /// Reads generic-password items and picks the best usable credential.

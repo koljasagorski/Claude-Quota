@@ -164,7 +164,7 @@ private struct StylePreviewStrip: View {
         case .segmente:
             SegmenteGlyph(values: values, palette: palette)
         case .zahlenpaar:
-            Text("\(Int(values.sessionFraction * 100))·\(Int(values.weeklyFraction * 100))")
+            Text("\(Int((values.sessionFraction * 100).rounded()))·\(Int((values.weeklyFraction * 100).rounded()))")
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundColor(.white.opacity(0.92))
         }

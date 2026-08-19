@@ -9,7 +9,7 @@
 [![Plattform](https://img.shields.io/badge/Plattform-macOS%2013%2B-000000?logo=apple&logoColor=white)](#voraussetzungen)
 [![Swift](https://img.shields.io/badge/Swift-5.9%2B-F05138?logo=swift&logoColor=white)](#selbst-bauen)
 [![Abhängigkeiten](https://img.shields.io/badge/Abh%C3%A4ngigkeiten-keine-success)](#warum-keine-abhängigkeiten)
-[![Tests](https://img.shields.io/badge/Tests-49%20gr%C3%BCn-success)](#tests)
+[![Tests](https://img.shields.io/badge/Tests-65%20gr%C3%BCn-success)](#tests)
 [![Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue)](LICENSE)
 
 🇬🇧 **[English version of this page →](README.md)**
@@ -238,7 +238,7 @@ Läuft exakt den Pfad der App und meldet jede Stufe einzeln. Das Token wird nie 
 
 ```bash
 swift build -c release        # warnungsfrei
-swift test                    # 49 Tests
+swift test                    # 65 Tests
 ./scripts/bundle.sh           # → build/ClaudeMeter.app, signiert
 swift run claudemeter-doctor  # Live-Datenpfad prüfen
 swift run AssetGen            # Screenshots + AppIcon.icns neu erzeugen
@@ -246,7 +246,7 @@ swift run AssetGen            # Screenshots + AppIcon.icns neu erzeugen
 
 ### Tests
 
-49 Tests, ohne Netzwerk. Sie decken das ab, was während der Entwicklung tatsächlich kaputt war:
+65 Tests, ohne Netzwerk. Sie decken das ab, was während der Entwicklung tatsächlich kaputt war:
 
 - Beide Antwortschemata und die Mischform, die die API real liefert
 - Codename-Platzhalter (`nimbus_quill`, `tangelo`, …) werden nie zu falschen 0-%-Zeilen

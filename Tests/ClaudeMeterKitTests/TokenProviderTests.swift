@@ -189,3 +189,35 @@ final class KeychainSelectionTests: XCTestCase {
         XCTAssertEqual(credential.sourceDescription, "Schlüsselbund (Claude Code-credentials)")
     }
 }
+
+final class OwnKeychainEntryTests: XCTestCase {
+
+    /// Runbook §6 source 2 exists for a token from `claude setup-token`, which
+    /// is a bare string. Requiring a `claudeAiOauth` wrapper made this source
+    /// fail silently while the equivalent env var worked.
+    func testBareTokenIsAccepted() throws {
+        let credential = try XCTUnwrap(TokenProvider.bareToken(
+            Data("sk-ant-oat01-AbCdEfGhIjKlMnOpQrStUvWx\n".utf8), source: "test"
+        ))
+        XCTAssertEqual(credential.accessToken, "sk-ant-oat01-AbCdEfGhIjKlMnOpQrStUvWx")
+        XCTAssertNil(credential.expiresAt)
+        XCTAssertFalse(credential.isExpired)
+    }
+
+    /// A random blob must not be sent to the API as if it were a credential.
+    func testNonTokenBlobsAreRejected() {
+        XCTAssertNil(TokenProvider.bareToken(Data("hello".utf8), source: "test"))
+        XCTAssertNil(TokenProvider.bareToken(Data("".utf8), source: "test"))
+        XCTAssertNil(TokenProvider.bareToken(Data("sk-ant-short".utf8), source: "test"))
+        XCTAssertNil(TokenProvider.bareToken(Data("not-a-claude-token-but-quite-long".utf8), source: "test"))
+        XCTAssertNil(TokenProvider.bareToken(Data("sk-ant-oat01-has space in it here".utf8), source: "test"))
+    }
+
+    /// A JSON payload in the same entry must still take the structured path.
+    func testJSONPayloadStillPrefersStructuredDecode() throws {
+        let json = Data(#"{"claudeAiOauth":{"accessToken":"sk-ant-oat01-structured","subscriptionType":"max"}}"#.utf8)
+        let credential = try XCTUnwrap(TokenProvider.decode(json, source: "test"))
+        XCTAssertEqual(credential.accessToken, "sk-ant-oat01-structured")
+        XCTAssertEqual(credential.subscriptionType, "max")
+    }
+}

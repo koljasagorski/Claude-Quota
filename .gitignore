@@ -1,0 +1,16 @@
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Bundled app + intermediate icon set
+build/
+
+# macOS
+.DS_Store
+
+# Xcode (if anyone opens the package in it)
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/

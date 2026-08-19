@@ -96,6 +96,86 @@ struct StyleCard: View {
     }
 }
 
+
+/// GitHub social preview card — 1280 x 640 pt, the size GitHub renders for
+/// link unfurls on X, Slack, LinkedIn and the repo's own Open Graph tags.
+///
+/// GitHub crops toward the centre on some surfaces, so nothing load-bearing
+/// sits within ~40 pt of an edge.
+struct SocialPreview: View {
+    let snapshot: UsageSnapshot
+    let now: Date
+
+    private let ink = Color(red: 0.106, green: 0.102, blue: 0.094)
+    private let paper = Color(red: 0.957, green: 0.949, blue: 0.933)
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 56) {
+            VStack(alignment: .leading, spacing: 0) {
+                Preview.AppIcon(size: 96)
+                    .padding(.bottom, 18)
+
+                Text("ClaudeMeter")
+                    .font(.system(size: 62, weight: .semibold))
+                    .foregroundColor(ink)
+                    .padding(.bottom, 14)
+
+                Text("Claude usage in your macOS menu bar")
+                    .font(.system(size: 25, weight: .medium))
+                    .foregroundColor(ink.opacity(0.72))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 10)
+
+                Text("Rolling 5-hour session limit, weekly quota\nand exactly when each one resets.")
+                    .font(.system(size: 19))
+                    .foregroundColor(ink.opacity(0.52))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 26)
+
+                HStack(spacing: 8) {
+                    ForEach(["SwiftUI", "~1 MB", "no dependencies", "6 designs"], id: \.self) { chip in
+                        Text(chip)
+                            .font(.system(size: 14, design: .monospaced))
+                            .foregroundColor(ink.opacity(0.62))
+                            .padding(.horizontal, 11)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(ink.opacity(0.06))
+                            )
+                    }
+                }
+                .padding(.bottom, 30)
+
+                // Carries the destination when the card is reshared on its own.
+                Text("github.com/koljasagorski/Claude-Quota")
+                    .font(.system(size: 16, design: .monospaced))
+                    .foregroundColor(ink.opacity(0.38))
+            }
+            .frame(width: 570, alignment: .leading)
+
+            VStack(alignment: .trailing, spacing: 22) {
+                Preview.MenuBarStrip(style: .doppelring,
+                                     values: Preview.values(snapshot, now: now),
+                                     colored: false)
+                    .frame(width: 380)
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+
+                Preview.StaticPanel(style: .doppelring, snapshot: snapshot, now: now)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.26), radius: 26, y: 12)
+            }
+        }
+        .padding(.horizontal, 64)
+        .frame(width: 1280, height: 640)
+        .background(paper)
+    }
+}
+
 struct Overview: View {
     let snapshot: UsageSnapshot
     let now: Date
@@ -179,6 +259,9 @@ func generateAssets() {
         write(render(Preview.StaticPanel(style: style, snapshot: snapshot, now: now)),
               to: "assets/panel-\(style.rawValue).png")
     }
+
+    print("Rendering social preview…")
+    write(render(SocialPreview(snapshot: snapshot, now: now)), to: "assets/social-preview.png")
 
     print("Rendering overview…")
     write(render(Overview(snapshot: snapshot, now: now)), to: "assets/styles-overview.png")

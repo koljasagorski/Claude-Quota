@@ -1,0 +1,12 @@
+{
+  "five_hour": null,
+  "seven_day": null,
+  "seven_day_sonnet": null,
+  "limits": [
+    { "kind": "session", "group": "session", "percent": 8, "resets_at": "2026-08-19T11:20:00.831601+00:00", "scope": null, "is_active": true },
+    { "kind": "weekly_all", "group": "weekly", "percent": 66, "resets_at": "2026-08-21T18:00:00.831616+00:00", "scope": null, "is_active": true },
+    { "kind": "weekly_scoped", "group": "weekly", "percent": 12, "resets_at": "2026-08-21T17:59:59.831772+00:00",
+      "scope": { "model": { "id": null, "display_name": "Opus" }, "surface": null }, "is_active": false },
+    { "kind": "monthly_quantum_flux", "group": "monthly", "percent": 3, "resets_at": "2026-09-01T00:00:00+00:00", "scope": null }
+  ]
+}

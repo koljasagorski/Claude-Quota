@@ -1,0 +1,9 @@
+{
+  "five_hour": { "utilization": 35.0, "resets_at": "2026-08-19T22:00:00+00:00" },
+  "seven_day": { "utilization": 14.0, "resets_at": "2026-08-22T20:00:00+00:00" },
+  "seven_day_sonnet": { "utilization": 39.0, "resets_at": "2026-08-22T20:00:00+00:00" },
+  "seven_day_opus": null,
+  "nimbus_quill": { "utilization": 0.0, "resets_at": null },
+  "tangelo": null,
+  "extra_usage": { "is_enabled": true, "monthly_limit": 100000, "used_credits": 0.0, "utilization": 12.0 }
+}
